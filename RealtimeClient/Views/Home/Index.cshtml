@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-Time Messages</title>
+    <style>
+        #status {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        #messages {
+            list-style-type: none;
+            padding: 0;
+        }
+
+            #messages li {
+                padding: 8px;
+                border-bottom: 1px solid #ddd;
+            }
+    </style>
+</head>
+<body>
+    <h1>Real-Time Messages</h1>
+    <div id="status">Connecting to server...</div>
+    <ul id="messages"></ul>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        const messageServiceUrl = "@Environment.GetEnvironmentVariable("MESSAGE_SERVICE_URL")";
+
+        const statusElement = document.getElementById('status');
+        const messagesElement = document.getElementById('messages');
+
+        function updateStatus(message, isConnected) {
+            statusElement.textContent = message;
+            statusElement.className = isConnected ? 'connected' : 'disconnected';
+        }
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl(`${messageServiceUrl}/messageHub`)
+            .build();
+
+        connection.onclose(() => {
+            updateStatus("Disconnected from server. Reconnecting...", false);
+            setTimeout(() => startConnection(), 5000); // Переподключение через 5 секунд
+        });
+
+        connection.on("ReceiveMessage", (content, timestamp, clientNumber) => {
+            const li = document.createElement("li");
+            li.textContent = `[${new Date(timestamp).toLocaleString()}] Client ${clientNumber}: ${content}`;
+            messagesElement.appendChild(li);
+        });
+
+        async function startConnection() {
+            try {
+                await connection.start();
+                updateStatus("Connected to server", true);
+            } catch (err) {
+                updateStatus("Connection failed: " + err.toString(), false);
+                setTimeout(() => startConnection(), 5000); // Повторная попытка через 5 секунд
+            }
+        }
+
+        startConnection();
+    </script>
+</body>
+</html>

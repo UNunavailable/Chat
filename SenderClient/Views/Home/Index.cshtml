@@ -1,0 +1,45 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Message Sender</title>
+</head>
+<body>
+    <h1>Send a Message</h1>
+    <form id="messageForm">
+        <label for="content">Message Content (max 128 chars):</label><br>
+        <input type="text" id="content" name="content" maxlength="128" required><br><br>
+        <label for="clientNumber">Client Number:</label><br>
+        <input type="number" id="clientNumber" name="clientNumber" required><br><br>
+        <button type="submit">Send Message</button>
+    </form>
+
+    <script>
+        const messageServiceUrl = "@Environment.GetEnvironmentVariable("MESSAGE_SERVICE_URL")";
+
+        document.getElementById('messageForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const content = document.getElementById('content').value;
+            const clientNumber = document.getElementById('clientNumber').value;
+
+            const response = await fetch(`${messageServiceUrl}/api/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content,
+                    clientNumber: parseInt(clientNumber)
+                })
+            });
+
+            if (response.ok) {
+                alert('Message sent successfully!');
+                document.getElementById('content').value = '';
+            } else {
+                alert('Failed to send message.');
+            }
+        });
+    </script>
+</body>
+</html>

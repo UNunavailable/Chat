@@ -1,0 +1,38 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Message History</title>
+</head>
+<body>
+    <h1>Message History (Last 10 Minutes)</h1>
+    <button id="loadHistory">Load History</button>
+    <ul id="messages"></ul>
+
+    <script>
+        const messageServiceUrl = "@Environment.GetEnvironmentVariable("MESSAGE_SERVICE_URL")";
+
+        document.getElementById('loadHistory').addEventListener('click', async () => {
+            const end = new Date();
+            const start = new Date(end.getTime() - 10 * 60 * 1000);
+
+            const response = await fetch(
+                `${messageServiceUrl}/api/messages?start=${start.toISOString()}&end=${end.toISOString()}`
+            );
+
+            if (response.ok) {
+                const messages = await response.json();
+                const messagesList = document.getElementById('messages');
+                messagesList.innerHTML = ''; 
+
+                messages.forEach(msg => {
+                    const li = document.createElement('li');
+                    li.textContent = `[${new Date(msg.timestamp).toLocaleString()}] Client ${msg.clientNumber}: ${msg.content}`;
+                    messagesList.appendChild(li);
+                });
+            } else {
+                alert('Failed to load message history.');
+            }
+        });
+    </script>
+</body>
+</html>

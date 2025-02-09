@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  web:
+    build: 
+        context: .
+        dockerfile: MessageService/Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=message_db;Username=postgres;Password=postgres;
+      - ALLOWED_ORIGINS=http://localhost:5001;http://localhost:5002;http://localhost:5003
+    depends_on:
+      - db
+
+  sender:
+    build:
+      context: .
+      dockerfile: SenderClient/Dockerfile
+    ports:
+      - "5001:8080"
+    environment:
+      - MESSAGE_SERVICE_URL=http://localhost:5000
+    depends_on:
+      - web
+
+  realtime:
+    build:
+      context: .
+      dockerfile: RealtimeClient/Dockerfile
+    ports:
+      - "5002:8080"
+    environment:
+      - MESSAGE_SERVICE_URL=http://localhost:5000
+    depends_on:
+      - web
+
+  history:
+    build:
+      context: .
+      dockerfile: HistoryClient/Dockerfile
+    ports:
+      - "5003:8080"
+    environment:
+      - MESSAGE_SERVICE_URL=http://localhost:5000
+    depends_on:
+      - web
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: message_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
